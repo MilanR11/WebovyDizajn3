@@ -1,0 +1,99 @@
+﻿@model IEnumerable<MakerslabInventory.Models.Inventar>
+@using MakerslabInventory.Models // TOTO JE DÔLEŽITÉ PRE ROZPOZNANIE ENUM
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Inventár</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-success">Vytvoriť novú položku</a>
+</p>
+
+<form asp-action="Index" method="get">
+    <div class="form-actions no-color mb-3">
+        <p>
+            Vyhľadať v inventári: <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" />
+            <input type="submit" value="Hľadať" class="btn btn-primary" />
+            <a asp-action="Index" class="btn btn-secondary">Zobraziť všetko</a>
+        </p>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]">
+                    @Html.DisplayNameFor(model => model.Nazov)
+                </a>
+            </th>
+            <th>
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]">
+                    @Html.DisplayNameFor(model => model.Kategoria)
+                </a>
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Lokalita)
+            </th>
+            <th class="text-center">
+                @Html.DisplayNameFor(model => model.Stav)
+            </th>
+            <th class="text-center">
+                Zásoba
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            // Logika vizuálneho stavu (teraz funguje s Enum):
+            var rowClass = "";
+
+            // 1. Priorita: Zapožičané (žlté)
+            if (item.Stav == StavInventara.Vypožičaný && !string.IsNullOrEmpty(item.ZapozicaneKomu))
+            {
+                rowClass = "table-warning"; // Žlté upozornenie
+            }
+            // 2. Sekundárna priorita: Nízky stav (červené)
+            else if (item.Mnozstvo < item.MinMnozstvo)
+            {
+                rowClass = "table-danger"; // Červené upozornenie
+            }
+
+            <tr class="@rowClass">
+                <td>
+                    @Html.DisplayFor(modelItem => item.Nazov)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Kategoria)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Lokalita)
+                </td>
+                <td class="text-center">
+                    @Html.DisplayFor(modelItem => item.Stav)
+
+                    @* Zobrazenie mena iba ak je Stav: Vypožičaný a pole je vyplnené *@
+                    @if (item.Stav == StavInventara.Vypožičaný && !string.IsNullOrEmpty(item.ZapozicaneKomu))
+                    {
+                        <br />
+                        <small>Komu: @Html.DisplayFor(modelItem => item.ZapozicaneKomu)</small>
+                    }
+                </td>
+                <td class="text-center">
+                    <strong>@Html.DisplayFor(modelItem => item.Mnozstvo)</strong> @Html.DisplayFor(modelItem => item.Jednotka)
+                    <br />
+                    <small>(Min: @Html.DisplayFor(modelItem => item.MinMnozstvo), Max: @Html.DisplayFor(modelItem => item.MaxMnozstvo))</small>
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Upraviť</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Detaily</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Zmazať</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
