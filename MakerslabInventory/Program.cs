@@ -2,6 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MakerslabInventory.Data;
 using Microsoft.AspNetCore.Identity;
+using OfficeOpenXml;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+// TENTO RIADOK M‘éE CH›BAç, PRIDAJ HO, ABY FUNGOVALO LicenseContext
+
+
+// TENTO USING JE NOV›: Pre RoleManager a UserManager, ktorÈ pouûÌvaö niûöie
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,13 +24,22 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.Sign
     .AddDefaultTokenProviders();
 
 // Pridanie ostatn˝ch sluûieb
+// ...
+// Pridanie sluûieb do kontajnera.
 builder.Services.AddControllersWithViews();
+// ... Ôalöie builder.Services.Add...
+
+// ----------------------------------------------------
+// KONE»N… NASTAVENIE PRE EPPLUS - Nach·dza sa na spr·vnom mieste
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+// ----------------------------------------------------
 
 var app = builder.Build();
 
 // K”D NA INICIALIZ¡CIU A PRIRADENIE ROLÕ
 using (var scope = app.Services.CreateScope())
 {
+    // POZN¡MKA: RoleManager a UserManager s˙ teraz dostupnÈ vÔaka NOV…MU usingu
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
 

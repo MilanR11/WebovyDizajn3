@@ -9,8 +9,14 @@
 
 <p>
     <a asp-action="Create" class="btn btn-success">Vytvoriť novú položku</a>
+
+    <a asp-action="ExportToExcel" class="btn btn-info" style="margin-left: 15px;">
+        <i class="fa fa-file-excel"></i> Export do Excelu (.xlsx)
+    </a>
 </p>
 
+<form asp-action="Index" method="get">
+</form>
 <form asp-action="Index" method="get">
     <div class="form-actions no-color mb-3">
         <p>
