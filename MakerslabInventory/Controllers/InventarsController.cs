@@ -96,14 +96,15 @@ namespace MakerslabInventory.Controllers
                 // 4. Pridanie hlavičiek (Headers)
                 worksheet.Cells[1, 1].Value = "ID";
                 worksheet.Cells[1, 2].Value = "Názov";
-                worksheet.Cells[1, 3].Value = "Kategória";
-                worksheet.Cells[1, 4].Value = "Množstvo";
-                worksheet.Cells[1, 5].Value = "Jednotka";
-                worksheet.Cells[1, 6].Value = "Lokalita";
-                worksheet.Cells[1, 7].Value = "Min. limit";
-                worksheet.Cells[1, 8].Value = "Stav";
-                worksheet.Cells[1, 9].Value = "Zapožičané komu";
-                worksheet.Cells[1, 10].Value = "Dátum výpožičky";
+                worksheet.Cells[1, 3].Value = "Sériové číslo";
+                worksheet.Cells[1, 4].Value = "Kategória";
+                worksheet.Cells[1, 5].Value = "Množstvo";
+                worksheet.Cells[1, 6].Value = "Jednotka";
+                worksheet.Cells[1, 7].Value = "Lokalita";
+                worksheet.Cells[1, 8].Value = "Min. limit";
+                worksheet.Cells[1, 9].Value = "Stav";
+                worksheet.Cells[1, 10].Value = "Zapožičané komu";
+                worksheet.Cells[1, 11].Value = "Dátum výpožičky";
 
                 // 5. Naplnenie dát (Data)
                 int row = 2;
@@ -111,14 +112,15 @@ namespace MakerslabInventory.Controllers
                 {
                     worksheet.Cells[row, 1].Value = item.Id;
                     worksheet.Cells[row, 2].Value = item.Nazov;
-                    worksheet.Cells[row, 3].Value = item.Kategoria;
-                    worksheet.Cells[row, 4].Value = item.Mnozstvo;
-                    worksheet.Cells[row, 5].Value = item.Jednotka;
-                    worksheet.Cells[row, 6].Value = item.Lokalita;
-                    worksheet.Cells[row, 7].Value = item.MinMnozstvo;
-                    worksheet.Cells[row, 8].Value = item.Stav.ToString(); // Konverzia ENUM na text
-                    worksheet.Cells[row, 9].Value = item.ZapozicaneKomu;
-                    worksheet.Cells[row, 10].Value = item.DatumVypozicky?.ToString("yyyy-MM-dd"); // Formátovanie dátumu
+                    worksheet.Cells[row, 3].Value = item.SerioveCislo;
+                    worksheet.Cells[row, 4].Value = item.Kategoria;
+                    worksheet.Cells[row, 5].Value = item.Mnozstvo;
+                    worksheet.Cells[row, 6].Value = item.Jednotka;
+                    worksheet.Cells[row, 7].Value = item.Lokalita;
+                    worksheet.Cells[row, 8].Value = item.MinMnozstvo;
+                    worksheet.Cells[row, 9].Value = item.Stav.ToString(); // Konverzia ENUM na text
+                    worksheet.Cells[row, 10].Value = item.ZapozicaneKomu;
+                    worksheet.Cells[row, 11].Value = item.DatumVypozicky?.ToString("yyyy-MM-dd"); // Formátovanie dátumu
                     row++;
                 }
 
@@ -164,7 +166,7 @@ namespace MakerslabInventory.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nazov,Kategoria,Mnozstvo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
+        public async Task<IActionResult> Create([Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
         {
             if (ModelState.IsValid)
             {
@@ -196,7 +198,7 @@ namespace MakerslabInventory.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Nazov,Kategoria,Mnozstvo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
         {
             if (id != inventar.Id)
             {
@@ -279,6 +281,7 @@ namespace MakerslabInventory.Controllers
             // Ak už je požičaný, vrátime užívateľa späť (alebo vyhodíme chybu)
             if (inventar.Stav == StavInventara.Vypožičaný)
             {
+                TempData["Warning"] = $"Položka '{inventar.Nazov}' je už vypožičaná.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -317,6 +320,7 @@ namespace MakerslabInventory.Controllers
                 _context.Update(inventar);
 
                 await _context.SaveChangesAsync();
+                TempData["Success"] = $"Položka '{inventar.Nazov}' bola úspešne vypožičaná osobe '{vypozicka.MenoPoziciavatela}'.";
                 return RedirectToAction(nameof(Index));
             }
             
@@ -352,6 +356,7 @@ namespace MakerslabInventory.Controllers
             _context.Update(inventar);
 
             await _context.SaveChangesAsync();
+            TempData["Success"] = $"Položka '{inventar.Nazov}' bola vrátená späť do inventára.";
             return RedirectToAction(nameof(Index));
         }
 

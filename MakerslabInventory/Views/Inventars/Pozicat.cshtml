@@ -18,14 +18,16 @@
 
             <div class="form-group mb-3">
                 <label asp-for="MenoPoziciavatela" class="control-label"></label>
-                <input asp-for="MenoPoziciavatela" class="form-control" placeholder="Meno žiaka / učiteľa" />
+                <input asp-for="MenoPoziciavatela" class="form-control" placeholder="Meno žiaka / učiteľa" maxlength="100" aria-describedby="menoHelp" />
                 <span asp-validation-for="MenoPoziciavatela" class="text-danger"></span>
+                <div id="menoHelp" class="form-text">Uveďte celé meno osoby, ktorej sa položka požičiava.</div>
             </div>
             
             <div class="form-group mb-3">
                 <label asp-for="Poznamka" class="control-label"></label>
-                <textarea asp-for="Poznamka" class="form-control"></textarea>
+                <textarea asp-for="Poznamka" class="form-control" rows="3" maxlength="500" aria-describedby="poznamkaHelp" placeholder="Voliteľné: napr. trieda, účel, termín použitia"></textarea>
                 <span asp-validation-for="Poznamka" class="text-danger"></span>
+                <div id="poznamkaHelp" class="form-text">Maximálne 500 znakov. Neuvádzajte citlivé údaje.</div>
             </div>
 
             <div class="form-group">
