@@ -16,5 +16,7 @@ namespace MakerslabInventory.Data
         }
 
         public DbSet<MakerslabInventory.Models.Inventar> Inventar { get; set; } = default!;
+        
+        public DbSet<MakerslabInventory.Models.Vypozicka> Vypozicka { get; set; } = default!;
     }
 }

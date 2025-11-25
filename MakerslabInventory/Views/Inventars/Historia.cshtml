@@ -1,0 +1,66 @@
+﻿@model IEnumerable<MakerslabInventory.Models.Vypozicka>
+
+@{
+    ViewData["Title"] = "História výpožičiek";
+}
+
+<h1>História: @ViewData["NazovInventara"]</h1>
+
+<p>
+    <a asp-action="Index" class="btn btn-secondary">Späť na zoznam</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.MenoPoziciavatela)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DatumOd)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DatumDo)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Poznamka)
+        </th>
+        <th>Stav</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.MenoPoziciavatela)
+            </td>
+            <td>
+                @item.DatumOd.ToShortDateString()
+            </td>
+            <td>
+                @if (item.DatumDo.HasValue)
+                {
+                    @item.DatumDo.Value.ToShortDateString()
+                }
+                else
+                {
+                    <span class="text-danger">Nevrátené</span>
+                }
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Poznamka)
+            </td>
+            <td>
+                @if (item.JeAktivna)
+                {
+                    <span class="badge bg-warning text-dark">Aktívna</span>
+                }
+                else
+                {
+                    <span class="badge bg-success">Ukončená</span>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

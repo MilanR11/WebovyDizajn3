@@ -16,8 +16,6 @@
 </p>
 
 <form asp-action="Index" method="get">
-</form>
-<form asp-action="Index" method="get">
     <div class="form-actions no-color mb-3">
         <p>
             Vyhľadať v inventári: <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" />
@@ -49,7 +47,7 @@
             <th class="text-center">
                 Zásoba
             </th>
-            <th></th>
+            <th class="text-center">Akcie</th>
         </tr>
     </thead>
     <tbody>
@@ -95,9 +93,33 @@
                     <small>(Min: @Html.DisplayFor(modelItem => item.MinMnozstvo), Max: @Html.DisplayFor(modelItem => item.MaxMnozstvo))</small>
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id">Upraviť</a> |
-                    <a asp-action="Details" asp-route-id="@item.Id">Detaily</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Id">Zmazať</a>
+                    <div class="btn-group btn-group-sm" role="group">
+                        @* Tlačidlá dostupné pre Admina a Učiteľa *@
+                        @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+                        {
+                            @if (item.Stav == StavInventara.Dostupný)
+                            {
+                                <a asp-action="Pozicat" asp-route-id="@item.Id" class="btn btn-warning text-dark">Požičať</a>
+                            }
+                            else if (item.Stav == StavInventara.Vypožičaný)
+                            {
+                                <form asp-action="Vratit" asp-route-id="@item.Id" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-success" onclick="return confirm('Naozaj vrátiť položku @item.Nazov?');">Vrátiť</button>
+                                </form>
+                            }
+
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary">Upraviť</a>
+                        }
+
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Detail</a>
+                        <a asp-action="Historia" asp-route-id="@item.Id" class="btn btn-secondary">História</a>
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Zmazať</a>
+                        }
+                    </div>
                 </td>
             </tr>
         }

@@ -69,6 +69,37 @@ namespace MakerslabInventory.Migrations
                     b.ToTable("Inventar");
                 });
 
+            modelBuilder.Entity("MakerslabInventory.Models.Vypozicka", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DatumDo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DatumOd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InventarId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MenoPoziciavatela")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Poznamka")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventarId");
+
+                    b.ToTable("Vypozicka");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -265,6 +296,17 @@ namespace MakerslabInventory.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("MakerslabInventory.Models.Vypozicka", b =>
+                {
+                    b.HasOne("MakerslabInventory.Models.Inventar", "Inventar")
+                        .WithMany()
+                        .HasForeignKey("InventarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Inventar");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

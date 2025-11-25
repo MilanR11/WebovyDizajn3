@@ -1,0 +1,41 @@
+﻿@model MakerslabInventory.Models.Vypozicka
+
+@{
+    ViewData["Title"] = "Požičať inventár";
+}
+
+<h1>Požičať: @Model.Inventar?.Nazov</h1>
+
+<h4>Zadajte údaje o výpožičke</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Pozicat">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <!-- Skryté pole pre ID inventára -->
+            <input type="hidden" asp-for="InventarId" />
+
+            <div class="form-group mb-3">
+                <label asp-for="MenoPoziciavatela" class="control-label"></label>
+                <input asp-for="MenoPoziciavatela" class="form-control" placeholder="Meno žiaka / učiteľa" />
+                <span asp-validation-for="MenoPoziciavatela" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="Poznamka" class="control-label"></label>
+                <textarea asp-for="Poznamka" class="form-control"></textarea>
+                <span asp-validation-for="Poznamka" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Potvrdiť výpožičku" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Späť na zoznam</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

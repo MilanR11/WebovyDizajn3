@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using OfficeOpenXml; // Nezabudni na tento using
 
 namespace MakerslabInventory.Controllers
+
 {
     [Authorize]
     public class InventarsController : Controller
@@ -240,9 +241,116 @@ namespace MakerslabInventory.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // ... existing code ...
         private bool InventarExists(int id)
         {
             return _context.Inventar.Any(e => e.Id == id);
         }
+
+        // --- NOVÝ KÓD PRE VÝPOŽIČKY ZAČÍNA TU ---
+
+        // GET: Inventars/Pozicat/5
+        [Authorize(Roles = "Admin,Ucitel")]
+        public async Task<IActionResult> Pozicat(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var inventar = await _context.Inventar.FindAsync(id);
+            if (inventar == null) return NotFound();
+
+            // Ak už je požičaný, vrátime užívateľa späť (alebo vyhodíme chybu)
+            if (inventar.Stav == StavInventara.Vypožičaný)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var vypozicka = new Vypozicka
+            {
+                InventarId = inventar.Id,
+                Inventar = inventar // Aby sme vo View videli názov
+            };
+
+            return View(vypozicka);
+        }
+
+        // POST: Inventars/Pozicat
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Ucitel")]
+        public async Task<IActionResult> Pozicat([Bind("InventarId,MenoPoziciavatela,Poznamka")] Vypozicka vypozicka)
+        {
+            // 1. Načítame inventár, ktorý chceme požičať
+            var inventar = await _context.Inventar.FindAsync(vypozicka.InventarId);
+            if (inventar == null) return NotFound();
+
+            // Odstránime validáciu pre objekt Inventar, lebo ho neposielame z formulára celý
+            ModelState.Remove("Inventar");
+
+            if (ModelState.IsValid)
+            {
+                // 2. Nastavíme dátum a uložíme výpožičku
+                vypozicka.DatumOd = DateTime.Now;
+                _context.Vypozicka.Add(vypozicka);
+
+                // 3. Zmeníme stav inventára na Vypožičaný
+                inventar.Stav = StavInventara.Vypožičaný;
+                inventar.ZapozicaneKomu = vypozicka.MenoPoziciavatela;
+                inventar.DatumVypozicky = DateTime.Now;
+                _context.Update(inventar);
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            
+            // Ak nastala chyba, vrátime formulár (musíme znova načítať inventár pre zobrazenie názvu)
+            vypozicka.Inventar = inventar;
+            return View(vypozicka);
+        }
+
+        // POST: Inventars/Vratit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Ucitel")]
+        public async Task<IActionResult> Vratit(int id)
+        {
+            var inventar = await _context.Inventar.FindAsync(id);
+            if (inventar == null) return NotFound();
+
+            // Nájdi otvorenú výpožičku pre tento predmet
+            var aktivnaVypozicka = await _context.Vypozicka
+                .FirstOrDefaultAsync(v => v.InventarId == id && v.DatumDo == null);
+
+            if (aktivnaVypozicka != null)
+            {
+                // Uzavri výpožičku
+                aktivnaVypozicka.DatumDo = DateTime.Now;
+                _context.Update(aktivnaVypozicka);
+            }
+
+            // Resetuj stav inventára
+            inventar.Stav = StavInventara.Dostupný;
+            inventar.ZapozicaneKomu = null;
+            inventar.DatumVypozicky = null;
+            _context.Update(inventar);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: Inventars/Historia/5
+        public async Task<IActionResult> Historia(int id)
+        {
+            var inventar = await _context.Inventar.FindAsync(id);
+            if (inventar == null) return NotFound();
+
+            var historia = await _context.Vypozicka
+                .Where(v => v.InventarId == id)
+                .OrderByDescending(v => v.DatumOd)
+                .ToListAsync();
+
+            ViewData["NazovInventara"] = inventar.Nazov;
+            return View(historia);
+        }
+        // --- KONIEC NOVÉHO KÓDU ---
     }
 }
