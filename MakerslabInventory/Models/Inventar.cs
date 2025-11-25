@@ -20,6 +20,10 @@ namespace MakerslabInventory.Models
 
         // NOVÉ POLIA PRE DETAILNEJŠIU INVENTARIZÁCIU
 
+        [Display(Name = "Sériové číslo")]
+        [StringLength(100, ErrorMessage = "Sériové číslo môže mať najviac 100 znakov.")]
+        public string? SerioveCislo { get; set; }
+
         [Display(Name = "Merná jednotka")]
         public string Jednotka { get; set; } = "ks"; // Merná jednotka (ks, kg, m, balenie)
 

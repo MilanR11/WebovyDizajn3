@@ -45,6 +45,10 @@ namespace MakerslabInventory.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SerioveCislo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("MaxMnozstvo")
                         .HasColumnType("int");
 

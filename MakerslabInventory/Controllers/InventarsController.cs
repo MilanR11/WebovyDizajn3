@@ -77,6 +77,31 @@ namespace MakerslabInventory.Controllers
 
             return View(await inventar.ToListAsync());
         }
+
+        // Rýchla aktualizácia množstva z prehľadu (AJAX)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Ucitel")]
+        public async Task<IActionResult> UpdateQuantity(int id, int quantity)
+        {
+            if (quantity < 0)
+            {
+                return BadRequest(new { success = false, message = "Množstvo nemôže byť záporné." });
+            }
+
+            var item = await _context.Inventar.FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null)
+            {
+                return NotFound(new { success = false, message = "Položka neexistuje." });
+            }
+
+            item.Mnozstvo = quantity;
+            _context.Update(item);
+            await _context.SaveChangesAsync();
+
+            bool isLow = item.Mnozstvo <= item.MinMnozstvo;
+            return Ok(new { success = true, lowStock = isLow, min = item.MinMnozstvo, qty = item.Mnozstvo });
+        }
         
 
         // V súbore Controllers/InventarsController.cs

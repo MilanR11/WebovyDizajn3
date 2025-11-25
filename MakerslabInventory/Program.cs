@@ -28,9 +28,13 @@ ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 var app = builder.Build();
 
-// Inicializácia a priradenie rolí
+// Automatická migrácia databázy a inicializácia rolí
 using (var scope = app.Services.CreateScope())
 {
+    // Auto-apply EF Core migrations to keep DB schema up to date
+    var db = scope.ServiceProvider.GetRequiredService<MakerslabInventoryContext>();
+    db.Database.Migrate();
+
     // Získanie služieb pre správu rolí a používateľov
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();

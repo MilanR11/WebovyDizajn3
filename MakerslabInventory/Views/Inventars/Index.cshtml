@@ -22,6 +22,26 @@
             <input type="submit" value="Hľadať" class="btn btn-primary" />
             <a asp-action="Index" class="btn btn-secondary">Zobraziť všetko</a>
         </p>
+        <div class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label for="inventoryState" class="col-form-label">Filtrovať stav:</label>
+            </div>
+            <div class="col-auto">
+                @{
+                    var currentState = ViewData["CurrentStateFilter"]?.ToString();
+                }
+                <select id="inventoryState" name="inventoryState" class="form-select">
+                    @if (string.IsNullOrEmpty(currentState)) {<option value="" selected>Všetko</option>} else {<option value="">Všetko</option>}
+                    @if (currentState == "Dostupný") {<option value="Dostupný" selected>Dostupný</option>} else {<option value="Dostupný">Dostupný</option>}
+                    @if (currentState == "Vypožičaný") {<option value="Vypožičaný" selected>Vypožičaný</option>} else {<option value="Vypožičaný">Vypožičaný</option>}
+                    @if (currentState == "Pokazený") {<option value="Pokazený" selected>Pokazený</option>} else {<option value="Pokazený">Pokazený</option>}
+                    @if (currentState == "NizkaZasoba") {<option value="NizkaZasoba" selected>Nízka zásoba</option>} else {<option value="NizkaZasoba">Nízka zásoba</option>}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">Filtrovať</button>
+            </div>
+        </div>
     </div>
 </form>
 
@@ -29,12 +49,15 @@
     <thead>
         <tr>
             <th>
-                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]">
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]" asp-route-inventoryState="@ViewData["CurrentStateFilter"]">
                     @Html.DisplayNameFor(model => model.Nazov)
                 </a>
             </th>
             <th>
-                <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]">
+                @Html.DisplayNameFor(model => model.SerioveCislo)
+            </th>
+            <th>
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]" asp-route-inventoryState="@ViewData["CurrentStateFilter"]">
                     @Html.DisplayNameFor(model => model.Kategoria)
                 </a>
             </th>
@@ -62,14 +85,17 @@
                 rowClass = "table-warning"; // Žlté upozornenie
             }
             // 2. Sekundárna priorita: Nízky stav (červené)
-            else if (item.Mnozstvo < item.MinMnozstvo)
+            else if (item.Mnozstvo <= item.MinMnozstvo)
             {
                 rowClass = "table-danger"; // Červené upozornenie
             }
 
-            <tr class="@rowClass">
+            <tr id="row-@item.Id" class="@rowClass">
                 <td>
                     @Html.DisplayFor(modelItem => item.Nazov)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SerioveCislo)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Kategoria)
@@ -88,7 +114,17 @@
                     }
                 </td>
                 <td class="text-center">
-                    <strong>@Html.DisplayFor(modelItem => item.Mnozstvo)</strong> @Html.DisplayFor(modelItem => item.Jednotka)
+                    @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+                    {
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                            <input type="number" class="form-control form-control-sm qty-input" style="width:100px" min="0" value="@item.Mnozstvo" data-id="@item.Id" />
+                            <span>@item.Jednotka</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <strong>@Html.DisplayFor(modelItem => item.Mnozstvo)</strong> @Html.DisplayFor(modelItem => item.Jednotka)
+                    }
                     <br />
                     <small>(Min: @Html.DisplayFor(modelItem => item.MinMnozstvo), Max: @Html.DisplayFor(modelItem => item.MaxMnozstvo))</small>
                 </td>
@@ -125,3 +161,88 @@
         }
     </tbody>
 </table>
+
+@* Skrytý formulár iba na získanie AntiForgery tokenu pre AJAX *@
+@if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+{
+    <form id="antiForgeryForm" method="post">
+        @Html.AntiForgeryToken()
+    </form>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            function getRequestVerificationToken() {
+                var tokenInput = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+                return tokenInput ? tokenInput.value : '';
+            }
+
+            function setRowLowState(id, isLow) {
+                var row = document.getElementById('row-' + id);
+                if (!row) return;
+                row.classList.remove('table-danger');
+                if (isLow) {
+                    row.classList.add('table-danger');
+                }
+            }
+
+            function sendUpdate(id, qty, inputEl) {
+                inputEl.disabled = true;
+                fetch('@Url.Action("UpdateQuantity", "Inventars")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: new URLSearchParams({
+                        id: id,
+                        quantity: qty,
+                        __RequestVerificationToken: getRequestVerificationToken()
+                    })
+                })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok || !data.success) {
+                        throw new Error(data.message || 'Nepodarilo sa uložiť množstvo');
+                    }
+                    setRowLowState(id, !!data.lowStock);
+                })
+                .catch(err => {
+                    alert(err.message);
+                    // vrátiť starú hodnotu ak máme dataset pôvodnej hodnoty
+                })
+                .finally(() => {
+                    inputEl.disabled = false;
+                });
+            }
+
+            document.querySelectorAll('.qty-input').forEach(function (el) {
+                // uložiť pôvodnú hodnotu
+                el.dataset.orig = el.value;
+
+                el.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        var id = el.getAttribute('data-id');
+                        var val = parseInt(el.value, 10);
+                        if (isNaN(val) || val < 0) { alert('Zadajte nezáporné číslo.'); el.value = el.dataset.orig; return; }
+                        if (el.dataset.orig !== String(val)) {
+                            sendUpdate(id, val, el);
+                            el.dataset.orig = String(val);
+                        }
+                    }
+                });
+
+                el.addEventListener('blur', function () {
+                    var id = el.getAttribute('data-id');
+                    var val = parseInt(el.value, 10);
+                    if (isNaN(val) || val < 0) { alert('Zadajte nezáporné číslo.'); el.value = el.dataset.orig; return; }
+                    if (el.dataset.orig !== String(val)) {
+                        sendUpdate(id, val, el);
+                        el.dataset.orig = String(val);
+                    }
+                });
+            });
+        })();
+    </script>
+}
