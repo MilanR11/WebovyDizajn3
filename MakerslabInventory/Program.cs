@@ -3,12 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MakerslabInventory.Data;
 using Microsoft.AspNetCore.Identity;
 using OfficeOpenXml;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-// TENTO RIADOK MԎE CH�BA�, PRIDAJ HO, ABY FUNGOVALO LicenseContext
-
-
-// TENTO USING JE NOV�: Pre RoleManager a UserManager, ktor� pou��va� ni��ie
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,27 +17,25 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.Sign
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
-// Pridanie ostatn�ch slu�ieb
-// ...
-// Pridanie slu�ieb do kontajnera.
+// Pridanie služieb do kontajnera.
 builder.Services.AddControllersWithViews();
-// ... �al�ie builder.Services.Add...
+builder.Services.AddRazorPages();
 
 // ----------------------------------------------------
-// KONE�N� NASTAVENIE PRE EPPLUS - Nach�dza sa na spr�vnom mieste
+// KONEČNÉ NASTAVENIE PRE EPPLUS - Nachádza sa na správnom mieste
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 // ----------------------------------------------------
 
 var app = builder.Build();
 
-// K�D NA INICIALIZ�CIU A PRIRADENIE ROL�
+// Inicializácia a priradenie rolí
 using (var scope = app.Services.CreateScope())
 {
-    // POZN�MKA: RoleManager a UserManager s� teraz dostupn� v�aka NOV�MU usingu
+    // Získanie služieb pre správu rolí a používateľov
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-    // 1. Definovanie rol�
+    // Definovanie rolí
     string[] roleNames = { "Admin", "Ucitel", "Ziak" };
     foreach (var roleName in roleNames)
     {
@@ -53,7 +45,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // 2. Priradenie roly Admin prv�mu pou��vate�ovi
+    // Priradenie roly Admin vybranému používateľovi
     string adminEmail = "milanrabcan@gmail.com";
     var adminUser = userManager.FindByEmailAsync(adminEmail).Result;
 
@@ -62,7 +54,7 @@ using (var scope = app.Services.CreateScope())
         userManager.AddToRoleAsync(adminUser, "Admin").Wait();
     }
 }
-// KONIEC K�DU PRE ROLY
+// Koniec inicializácie rolí
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -76,7 +68,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// MIDDLEWARE (Spr�vne poradie)
+// MIDDLEWARE (Správne poradie)
 app.UseAuthentication();
 app.UseAuthorization();
 

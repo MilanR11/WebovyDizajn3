@@ -36,23 +36,33 @@ namespace MakerslabInventory.Controllers
             return View(userRolesViewModel);
         }
 
-        // Metóda na zmenu roly
-        public async Task<IActionResult> ManageRoles(string userId)
-        {
-            var view = await Index(); // Pre zjednodušenie vrátime zoznam, ale tu by mohol byť detail
-            return view; 
-        }
-
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddRole(string userId, string role)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return NotFound();
 
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                ModelState.AddModelError("role", "Rola je povinná.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Overíme, že rola existuje
+            if (!await _roleManager.RoleExistsAsync(role))
+            {
+                ModelState.AddModelError("role", $"Rola '{role}' neexistuje.");
+                return RedirectToAction(nameof(Index));
+            }
+
             // Najprv odstránime všetky existujúce roly (aby nemal naraz Ziak aj Ucitel)
             // Ak chceš povoliť viac rolí naraz, tento krok vynechaj
             var currentRoles = await _userManager.GetRolesAsync(user);
-            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            if (currentRoles.Count > 0)
+            {
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            }
 
             // Pridáme novú rolu
             await _userManager.AddToRoleAsync(user, role);
