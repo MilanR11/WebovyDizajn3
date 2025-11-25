@@ -1,22 +1,129 @@
+:root {
+  --bg-900: #0b1220; /* veľmi tmavá modrá/čierna – dielenské pozadie */
+  --bg-800: #101a30;
+  --bg-700: #13213d;
+  --text-100: #e6edf7;
+  --text-300: #b7c2d6;
+  --accent: #ffbf00; /* makers žltá (výstražná páska) */
+  --accent-2: #2bd4ff; /* cyan pre elektroniku */
+}
+
 html {
   font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+  html { font-size: 16px; }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem rgba(255,255,255,.6), 0 0 0 0.25rem rgba(43,212,255,.45);
 }
 
-html {
-  position: relative;
-  min-height: 100%;
-}
+html { position: relative; min-height: 100%; }
 
+/* Globálne makers pozadie – tmavé s jemnou mriežkou (blueprint feeling) */
 body {
   margin-bottom: 60px;
+  /* Návrat k svetlému (bielemu) pozadiu podľa požiadavky */
+  color: #212529; /* default bootstrap text color */
+  background-color: #ffffff;
+  background-image: none;
+  background-blend-mode: normal;
+}
+
+/* Prepožičanie farieb bootstrap prvkov na tmavé pozadie */
+a { color: var(--accent-2); }
+a:hover { color: #79e7ff; }
+
+.navbar.bg-dark { background-color: rgba(16,26,48,0.9) !important; }
+.border-dark { border-color: rgba(255,255,255,0.08) !important; }
+
+/* Hero sekcia v štýle makers/blueprint – bez fotiek */
+.hero { position: relative; min-height: 360px; color: var(--text-100); }
+.hero.hero-maker {
+  background:
+    radial-gradient(1200px 400px at 20% 0%, rgba(43,212,255,0.12), rgba(0,0,0,0)),
+    radial-gradient(800px 300px at 80% 100%, rgba(255,191,0,0.10), rgba(0,0,0,0)),
+    linear-gradient(180deg, var(--bg-800), var(--bg-900));
+}
+.hero .badge-accent { background: var(--accent); color: #1a1200; }
+.hero .btn-accent { background: var(--accent); border-color: var(--accent); color: #1a1200; }
+.hero .btn-accent:hover { filter: brightness(1.05); }
+.hero .btn-outline-light { border-color: #cfe8ff; color: #cfe8ff; }
+.hero .btn-outline-light:hover { background: #cfe8ff; color: #0b1628; }
+
+.hero-wave { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 80px; color: var(--bg-800); opacity: 0.8; }
+
+/* Karty – tmavé, bez fotiek, s ikonou */
+.card-zoom { transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
+.card-dark { background: linear-gradient(180deg, var(--bg-800), var(--bg-900)); color: var(--text-100); border: 1px solid rgba(255,255,255,0.07); }
+.card-zoom:hover { transform: translateY(-4px); box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.35); }
+
+.icon-circle {
+  width: 72px; height: 72px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.15), rgba(255,255,255,0));
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--accent);
+}
+.icon-circle svg { width: 40px; height: 40px; }
+
+/* Tabuľky a formuláre – jemné zosvetlenie pozadia buniek kvôli čitateľnosti */
+/* Pozn.: Ponechávame tmavé prvky hero/karty/navbar, ale vraciame default štýly pre tabuľky a formuláre na svetlom pozadí */
+.table { color: inherit; }
+.table thead { color: inherit; }
+.table-striped > tbody > tr:nth-of-type(odd) > * { background: inherit; }
+.form-control, .form-select { background: #ffffff; color: #212529; border-color: #ced4da; }
+.form-control::placeholder { color: #6c757d; }
+.form-check-input { background-color: #ffffff; border-color: rgba(0,0,0,0.25); }
+
+/* Alerty farebne s väčším kontrastom na tmavom pozadí */
+.alert { border: 0; }
+.alert-success { background: rgba(25,135,84,.2); color: #b6f3d2; }
+.alert-warning { background: rgba(255,193,7,.2); color: #ffe28b; }
+.alert-danger { background: rgba(220,53,69,.2); color: #ffc0c7; }
+
+/* ==========================================
+   Jemné pohyblivé ikony v pozadí (celowebovo)
+   - nenarúša interakcie (pointer-events:none)
+   - nízka krycia vrstva, aby obsah zostal čitateľný
+   - rešpektuje prefers-reduced-motion
+   ========================================== */
+.bg-icons-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0; /* obsah pôjde nad týmto */
+  pointer-events: none;
+  color: #0d6efd; /* bootstrap primary ako základný odtieň */
+  opacity: 0.075; /* veľmi jemné */
+}
+.bg-icons-overlay .bg-icon {
+  position: absolute;
+  display: block;
+  width: 64px;
+  height: 64px;
+  transform-origin: center;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.bg-icons-overlay .bg-icon svg { width: 100%; height: 100%; }
+
+/* Rozmiestnenie a odlišné rýchlosti/veľkosti */
+.bg-icons-overlay .i1 { top: 10%; left: 8%;  animation-name: floatY, slowRotate; animation-duration: 12s, 24s; }
+.bg-icons-overlay .i2 { bottom: 14%; right: 10%;  animation-name: floatX, slowRotate; animation-duration: 16s, 28s; width: 52px; height: 52px; }
+.bg-icons-overlay .i3 { top: 36%; right: 20%; animation-name: floatY, slowRotate; animation-duration: 18s, 30s; width: 72px; height: 72px; }
+.bg-icons-overlay .i4 { bottom: 26%; left: 18%; animation-name: floatX, slowRotate; animation-duration: 20s, 36s; width: 60px; height: 60px; }
+.bg-icons-overlay .i5 { top: 20%; left: 60%; animation-name: floatY, slowRotate; animation-duration: 22s, 40s; width: 64px; height: 64px; }
+.bg-icons-overlay .i6 { bottom: 10%; right: 45%; animation-name: floatX, slowRotate; animation-duration: 14s, 26s; width: 48px; height: 48px; }
+
+@keyframes floatY { from { transform: translateY(-6px); } to { transform: translateY(6px); } }
+@keyframes floatX { from { transform: translateX(-8px); } to { transform: translateX(8px); } }
+@keyframes slowRotate { from { rotate: 0deg; } to { rotate: 360deg; } }
+
+/* Uistime sa, že hlavný obsah je nad pozadím ikon */
+header, main, footer, .container { position: relative; z-index: 1; }
+
+/* Zníženie animácie pre používateľov s preferenciou obmedzeného pohybu */
+@media (prefers-reduced-motion: reduce) {
+  .bg-icons-overlay .bg-icon { animation: none !important; }
 }
