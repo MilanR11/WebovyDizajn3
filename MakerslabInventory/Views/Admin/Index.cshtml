@@ -1,0 +1,47 @@
+﻿@model List<MakerslabInventory.Models.UserRolesViewModel>
+
+@{
+    ViewData["Title"] = "Správa používateľov";
+}
+
+<h1>Správa používateľov a rolí</h1>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Email</th>
+        <th>Súčasné roly</th>
+        <th>Akcia: Zmeniť rolu na</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr>
+            <td>@user.Email</td>
+            <td>@string.Join(", ", user.Roles)</td>
+            <td>
+                <div class="btn-group" role="group">
+                    <form asp-action="AddRole" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" value="@user.UserId" />
+                        <input type="hidden" name="role" value="Admin" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Admin</button>
+                    </form>
+
+                    <form asp-action="AddRole" method="post" style="display:inline; margin-left:5px;">
+                        <input type="hidden" name="userId" value="@user.UserId" />
+                        <input type="hidden" name="role" value="Ucitel" />
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Učiteľ</button>
+                    </form>
+
+                    <form asp-action="AddRole" method="post" style="display:inline; margin-left:5px;">
+                        <input type="hidden" name="userId" value="@user.UserId" />
+                        <input type="hidden" name="role" value="Ziak" />
+                        <button type="submit" class="btn btn-sm btn-outline-success">Žiak</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -4,46 +4,46 @@ using MakerslabInventory.Data;
 using Microsoft.AspNetCore.Identity;
 using OfficeOpenXml;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-// TENTO RIADOK MÔE CHİBA, PRIDAJ HO, ABY FUNGOVALO LicenseContext
+// TENTO RIADOK MÔE CHï¿½BAï¿½, PRIDAJ HO, ABY FUNGOVALO LicenseContext
 
 
-// TENTO USING JE NOVİ: Pre RoleManager a UserManager, ktoré pouívaš nišie
+// TENTO USING JE NOVï¿½: Pre RoleManager a UserManager, ktorï¿½ pouï¿½ï¿½vaï¿½ niï¿½ï¿½ie
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Pridanie DbContext pre inventár a Identity
+// Pridanie DbContext pre inventï¿½r a Identity
 builder.Services.AddDbContext<MakerslabInventoryContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MakerslabInventoryContext") ?? throw new InvalidOperationException("Connection string 'MakerslabInventoryContext' not found.")));
 
-// Opravená konfigurácia Identity: Pouitie AddIdentity na správne povolenie rolí
+// Opravenï¿½ konfigurï¿½cia Identity: Pouï¿½itie AddIdentity na sprï¿½vne povolenie rolï¿½
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<MakerslabInventoryContext>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
-// Pridanie ostatnıch sluieb
+// Pridanie ostatnï¿½ch sluï¿½ieb
 // ...
-// Pridanie sluieb do kontajnera.
+// Pridanie sluï¿½ieb do kontajnera.
 builder.Services.AddControllersWithViews();
-// ... ïalšie builder.Services.Add...
+// ... ï¿½alï¿½ie builder.Services.Add...
 
 // ----------------------------------------------------
-// KONEÈNÉ NASTAVENIE PRE EPPLUS - Nachádza sa na správnom mieste
+// KONEï¿½Nï¿½ NASTAVENIE PRE EPPLUS - Nachï¿½dza sa na sprï¿½vnom mieste
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 // ----------------------------------------------------
 
 var app = builder.Build();
 
-// KÓD NA INICIALIZÁCIU A PRIRADENIE ROLÍ
+// Kï¿½D NA INICIALIZï¿½CIU A PRIRADENIE ROLï¿½
 using (var scope = app.Services.CreateScope())
 {
-    // POZNÁMKA: RoleManager a UserManager sú teraz dostupné vïaka NOVÉMU usingu
+    // POZNï¿½MKA: RoleManager a UserManager sï¿½ teraz dostupnï¿½ vï¿½aka NOVï¿½MU usingu
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-    // 1. Definovanie rolí
+    // 1. Definovanie rolï¿½
     string[] roleNames = { "Admin", "Ucitel", "Ziak" };
     foreach (var roleName in roleNames)
     {
@@ -53,7 +53,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // 2. Priradenie roly Admin prvému pouívate¾ovi
+    // 2. Priradenie roly Admin prvï¿½mu pouï¿½ï¿½vateï¿½ovi
     string adminEmail = "milanrabcan@gmail.com";
     var adminUser = userManager.FindByEmailAsync(adminEmail).Result;
 
@@ -62,7 +62,7 @@ using (var scope = app.Services.CreateScope())
         userManager.AddToRoleAsync(adminUser, "Admin").Wait();
     }
 }
-// KONIEC KÓDU PRE ROLY
+// KONIEC Kï¿½DU PRE ROLY
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -76,14 +76,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// MIDDLEWARE (Správne poradie)
+// MIDDLEWARE (Sprï¿½vne poradie)
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapRazorPages(); // Pre Identity stránky (Register, Login)
+app.MapRazorPages(); // Pre Identity strÃ¡nky
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Inventars}/{action=Index}/{id?}"); // ZMENENÃ‰ Z 'Home' NA 'Inventars'
 
 app.Run();

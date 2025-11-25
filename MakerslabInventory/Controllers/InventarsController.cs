@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using MakerslabInventory.Data;
 using MakerslabInventory.Models;
 using Microsoft.AspNetCore.Authorization;
-using OfficeOpenXml; // Nezabudni na tento using
+using OfficeOpenXml; 
 
 namespace MakerslabInventory.Controllers
 
@@ -135,6 +135,24 @@ namespace MakerslabInventory.Controllers
                     fileName);
             }
         }
+        
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var inventar = await _context.Inventar
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (inventar == null)
+            {
+                return NotFound();
+            }
+
+            return View(inventar);
+        }
+        
         // GET: Inventars/Create
         public IActionResult Create()
         {
@@ -353,4 +371,10 @@ namespace MakerslabInventory.Controllers
         }
         // --- KONIEC NOVÉHO KÓDU ---
     }
-}
+    // Presunutá Error metóda z HomeController
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new MakerslabInventory.Models.ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+} 
