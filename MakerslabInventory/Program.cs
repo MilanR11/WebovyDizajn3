@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Identity;
 using OfficeOpenXml;
 
 
+System.AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Pridanie DbContext pre invent�r a Identity

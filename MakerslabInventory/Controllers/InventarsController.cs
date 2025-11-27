@@ -150,7 +150,16 @@ namespace MakerslabInventory.Controllers
                 }
 
                 // 6. Automatická šírka stĺpcov
-                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                // Oprava: AutoFitColumns používa System.Drawing.Common, ktorý hádže chybu na novších .NET verziách/platformách.
+                try
+                {
+                    worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                }
+                catch (Exception)
+                {
+                    // Ak AutoFit zlyhá (PlatformNotSupportedException), nastavíme aspoň rozumnú predvolenú šírku
+                    worksheet.DefaultColWidth = 20; 
+                }
 
                 // 7. Vytvorenie a odoslanie súboru
                 var content = package.GetAsByteArray();

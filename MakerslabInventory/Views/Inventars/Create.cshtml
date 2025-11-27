@@ -54,7 +54,8 @@
             </div>
             <div class="form-group">
                 <label asp-for="Stav" class="control-label"></label>
-                <select asp-for="Stav" class="form-control"></select>
+                <!-- Pridal som asp-items, ktorý načíta hodnoty z Enumu -->
+                <select asp-for="Stav" class="form-control" asp-items="Html.GetEnumSelectList<MakerslabInventory.Models.StavInventara>()"></select>
                 <span asp-validation-for="Stav" class="text-danger"></span>
             </div>
             <div class="form-group">
