@@ -5,7 +5,8 @@
     }
     else
     {
-        Layout = "/Areas/Identity/Pages/_Layout.cshtml";
+        // Fallback to the app's main shared layout to avoid unresolved Identity layout path
+        Layout = "/Views/Shared/_Layout.cshtml";
     }
 }
 

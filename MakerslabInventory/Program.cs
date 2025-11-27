@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Pridanie DbContext pre invent�r a Identity
 builder.Services.AddDbContext<MakerslabInventoryContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MakerslabInventoryContext") ?? throw new InvalidOperationException("Connection string 'MakerslabInventoryContext' not found.")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("MakerslabInventoryContext") ?? throw new InvalidOperationException("Connection string 'MakerslabInventoryContext' not found.")));
 
 // Opraven� konfigur�cia Identity: Pou�itie AddIdentity na spr�vne povolenie rol�
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -52,6 +52,16 @@ using (var scope = app.Services.CreateScope())
     // Priradenie roly Admin vybranému používateľovi
     string adminEmail = "milanrabcan@gmail.com";
     var adminUser = userManager.FindByEmailAsync(adminEmail).Result;
+
+    if (adminUser == null)
+    {
+        var newAdmin = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
+        var result = userManager.CreateAsync(newAdmin, "Heslo123!").Result; // Nastavte si silné heslo
+        if (result.Succeeded)
+        {
+            adminUser = newAdmin;
+        }
+    }
 
     if (adminUser != null && !userManager.IsInRoleAsync(adminUser, "Admin").Result)
     {
