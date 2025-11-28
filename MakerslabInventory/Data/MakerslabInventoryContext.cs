@@ -18,5 +18,9 @@ namespace MakerslabInventory.Data
         public DbSet<MakerslabInventory.Models.Inventar> Inventar { get; set; } = default!;
         
         public DbSet<MakerslabInventory.Models.Vypozicka> Vypozicka { get; set; } = default!;
+
+        // Pridané tabuľky pre číselníky
+        public DbSet<MakerslabInventory.Models.Kategoria> Kategoria { get; set; } = default!;
+        public DbSet<MakerslabInventory.Models.Jednotka> Jednotka { get; set; } = default!;
     }
 }

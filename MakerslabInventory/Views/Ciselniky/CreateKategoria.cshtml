@@ -1,0 +1,22 @@
+﻿@model MakerslabInventory.Models.Kategoria
+@{ ViewData["Title"] = "Pridať kategóriu"; }
+
+<h1>Pridať novú kategóriu</h1>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="CreateKategoria">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label asp-for="Nazov" class="control-label">Názov kategórie</label>
+                <input asp-for="Nazov" class="form-control" placeholder="Napr. Tlačiareň, Filament..." />
+                <span asp-validation-for="Nazov" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Uložiť" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Späť</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts { @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} }

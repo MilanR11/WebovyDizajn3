@@ -67,9 +67,6 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Domov</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Inventars" asp-action="Index">Inventár</a>
                         </li>
                         
@@ -78,6 +75,11 @@
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-warning fw-bold" asp-area="" asp-controller="Admin" asp-action="Index">Správa používateľov</a>
+                            </li>
+                            
+                            <!-- TUTO PRIDAJTE ODKAZ NA ČÍSELNÍKY -->
+                            <li class="nav-item">
+                                <a class="nav-link text-info fw-bold" asp-area="" asp-controller="Ciselniky" asp-action="Index">Číselníky</a>
                             </li>
                         }
                     </ul>

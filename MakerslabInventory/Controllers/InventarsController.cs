@@ -190,79 +190,96 @@ namespace MakerslabInventory.Controllers
         }
         
         // GET: Inventars/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Inventars/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
-        {
-            if (ModelState.IsValid)
+            public IActionResult Create()
             {
-                _context.Add(inventar);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(inventar);
-        }
-
-        // GET: Inventars/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
+                // Načítanie zoznamov pre dropdowny
+                ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov");
+                ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov");
+                return View();
             }
 
-            var inventar = await _context.Inventar.FindAsync(id);
-            if (inventar == null)
+            // POST: Inventars/Create
+            // To protect from overposting attacks, enable the specific properties you want to bind to.
+            // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> Create([Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
             {
-                return NotFound();
-            }
-            return View(inventar);
-        }
-
-        // POST: Inventars/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
-        {
-            if (id != inventar.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                if (ModelState.IsValid)
                 {
-                    _context.Update(inventar);
+                    _context.Add(inventar);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!InventarExists(inventar.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                
+                // Pri chybe vrátiť dropdowny
+                ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
+                ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov", inventar.Jednotka);
+                
+                return View(inventar);
             }
-            return View(inventar);
-        }
 
-        // GET: Inventars/Delete/5
+            // GET: Inventars/Edit/5
+            public async Task<IActionResult> Edit(int? id)
+            {
+                if (id == null)
+                {
+                    return NotFound();
+                }
+
+                var inventar = await _context.Inventar.FindAsync(id);
+                if (inventar == null)
+                {
+                    return NotFound();
+                }
+                
+                // Načítanie zoznamov pre editáciu
+                ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
+                ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov", inventar.Jednotka);
+                
+                return View(inventar);
+            }
+
+            // POST: Inventars/Edit/5
+// ... existing code ...
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> Edit(int id, [Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
+            {
+                if (id != inventar.Id)
+                {
+                    return NotFound();
+                }
+
+                if (ModelState.IsValid)
+                {
+                    try
+                    {
+                        _context.Update(inventar);
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        if (!InventarExists(inventar.Id))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
+                    return RedirectToAction(nameof(Index));
+                }
+                
+                // Pri chybe vrátiť dropdowny
+                ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
+                ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov", inventar.Jednotka);
+                
+                return View(inventar);
+            }
+
+            // GET: Inventars/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)

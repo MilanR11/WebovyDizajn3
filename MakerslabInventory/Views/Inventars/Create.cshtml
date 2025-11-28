@@ -22,21 +22,33 @@
                 <input asp-for="SerioveCislo" class="form-control" />
                 <span asp-validation-for="SerioveCislo" class="text-danger"></span>
             </div>
+
+            <!-- TUTO JE ZMENA PRE KATEGÓRIU -->
             <div class="form-group">
                 <label asp-for="Kategoria" class="control-label"></label>
-                <input asp-for="Kategoria" class="form-control" />
+                <!-- Pôvodný input sme nahradili selectom -->
+                <select asp-for="Kategoria" class="form-control" asp-items="ViewBag.Kategoria">
+                    <option value="">-- Vyberte kategóriu --</option>
+                </select>
                 <span asp-validation-for="Kategoria" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Mnozstvo" class="control-label"></label>
                 <input asp-for="Mnozstvo" class="form-control" />
                 <span asp-validation-for="Mnozstvo" class="text-danger"></span>
             </div>
+
+            <!-- TUTO JE ZMENA PRE JEDNOTKU -->
             <div class="form-group">
                 <label asp-for="Jednotka" class="control-label"></label>
-                <input asp-for="Jednotka" class="form-control" />
+                <!-- Pôvodný input sme nahradili selectom -->
+                <select asp-for="Jednotka" class="form-control" asp-items="ViewBag.Jednotka">
+                    <option value="">-- Vyberte jednotku --</option>
+                </select>
                 <span asp-validation-for="Jednotka" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Lokalita" class="control-label"></label>
                 <input asp-for="Lokalita" class="form-control" />

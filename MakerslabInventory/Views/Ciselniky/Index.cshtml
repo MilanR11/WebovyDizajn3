@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Číselníky";
+    var categories = ViewData["Categories"] as List<MakerslabInventory.Models.Kategoria>;
+    var units = ViewData["Units"] as List<MakerslabInventory.Models.Jednotka>;
+}
+
+<h1>Správa číselníkov</h1>
+<p class="text-muted">Tu môžete spravovať možnosti, ktoré sa zobrazujú pri vytváraní inventára.</p>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Kategórie</h4>
+                <a asp-action="CreateKategoria" class="btn btn-light btn-sm">Pridať</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <tbody>
+                        @if (categories != null)
+                        {
+                            foreach (var item in categories)
+                            {
+                                <tr>
+                                    <td>@item.Nazov</td>
+                                    <td class="text-end">
+                                        <form asp-action="DeleteKategoria" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Naozaj chcete zmazať túto kategóriu?');" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">Zmazať</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Merné jednotky</h4>
+                <a asp-action="CreateJednotka" class="btn btn-light btn-sm">Pridať</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <tbody>
+                        @if (units != null)
+                        {
+                            foreach (var item in units)
+                            {
+                                <tr>
+                                    <td>@item.Nazov</td>
+                                    <td class="text-end">
+                                        <form asp-action="DeleteJednotka" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Naozaj chcete zmazať túto jednotku?');" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">Zmazať</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
