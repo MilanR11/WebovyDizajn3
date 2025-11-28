@@ -11,11 +11,13 @@ System.AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Pridanie DbContext pre invent�r a Identity
+var connectionString = builder.Configuration.GetConnectionString("MakerslabInventoryContext");
 builder.Services.AddDbContext<MakerslabInventoryContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("MakerslabInventoryContext") ?? throw new InvalidOperationException("Connection string 'MakerslabInventoryContext' not found.")));
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // Opraven� konfigur�cia Identity: Pou�itie AddIdentity na spr�vne povolenie rol�
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+
     .AddEntityFrameworkStores<MakerslabInventoryContext>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
