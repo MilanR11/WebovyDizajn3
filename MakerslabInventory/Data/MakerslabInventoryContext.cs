@@ -22,5 +22,8 @@ namespace MakerslabInventory.Data
         // Pridané tabuľky pre číselníky
         public DbSet<MakerslabInventory.Models.Kategoria> Kategoria { get; set; } = default!;
         public DbSet<MakerslabInventory.Models.Jednotka> Jednotka { get; set; } = default!;
+
+        // História zmien množstva – tabuľka InventarHistoria
+        public DbSet<MakerslabInventory.Models.InventarHistoria> InventarHistoria { get; set; } = default!;
     }
 }

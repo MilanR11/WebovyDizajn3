@@ -83,7 +83,7 @@ namespace MakerslabInventory.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Ucitel")]
-        public async Task<IActionResult> UpdateQuantity(int id, int quantity)
+        public async Task<IActionResult> UpdateQuantity(int id, int quantity, string? note)
         {
             if (quantity < 0)
             {
@@ -96,9 +96,27 @@ namespace MakerslabInventory.Controllers
                 return NotFound(new { success = false, message = "Položka neexistuje." });
             }
 
-            item.Mnozstvo = quantity;
-            _context.Update(item);
-            await _context.SaveChangesAsync();
+            var oldQty = item.Mnozstvo;
+            if (oldQty != quantity)
+            {
+                item.Mnozstvo = quantity;
+                _context.Update(item);
+
+                var historia = new InventarHistoria
+                {
+                    InventarId = item.Id,
+                    TypOperacie = 3, // rýchla zmena na zozname
+                    MnozstvoPred = oldQty,
+                    MnozstvoPo = quantity,
+                    ZmenaMnozstva = quantity - oldQty,
+                    Poznamka = string.IsNullOrWhiteSpace(note) ? null : note,
+                    DatumZmeny = DateTime.UtcNow,
+                    Pouzivatel = User?.Identity?.Name ?? string.Empty
+                };
+                _context.InventarHistoria.Add(historia);
+
+                await _context.SaveChangesAsync();
+            }
 
             bool isLow = item.Mnozstvo <= item.MinMnozstvo;
             return Ok(new { success = true, lowStock = isLow, min = item.MinMnozstvo, qty = item.Mnozstvo });
@@ -238,6 +256,21 @@ namespace MakerslabInventory.Controllers
 
                     _context.Add(inventar);
                     await _context.SaveChangesAsync();
+
+                    // Zápis počiatočného stavu do histórie (0 -> Mnozstvo)
+                    var hist = new InventarHistoria
+                    {
+                        InventarId = inventar.Id,
+                        TypOperacie = 1, // Create
+                        MnozstvoPred = 0,
+                        MnozstvoPo = inventar.Mnozstvo,
+                        ZmenaMnozstva = inventar.Mnozstvo - 0,
+                        Poznamka = "Vytvorenie položky",
+                        DatumZmeny = DateTime.UtcNow,
+                        Pouzivatel = User?.Identity?.Name ?? string.Empty
+                    };
+                    _context.InventarHistoria.Add(hist);
+                    await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
                 ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
@@ -270,7 +303,7 @@ namespace MakerslabInventory.Controllers
                 {
                     try
                     {
-                        // Načítame starý obrázok z DB, aby sme ho neprepísali, ak užívateľ nenahral nový
+                        // Načítame starý záznam z DB kvôli porovnaniu a zachovaniu obrázka
                         var existingInventar = await _context.Inventar.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
 
                         if (obrazokSubor != null && obrazokSubor.Length > 0)
@@ -288,6 +321,23 @@ namespace MakerslabInventory.Controllers
                             // Zachovanie starého
                             inventar.ObrazokData = existingInventar.ObrazokData;
                             inventar.ObrazokMimeType = existingInventar.ObrazokMimeType;
+                        }
+
+                        // Logovanie histórie zmeny množstva, ak sa zmenilo
+                        if (existingInventar != null && existingInventar.Mnozstvo != inventar.Mnozstvo)
+                        {
+                            var hist = new InventarHistoria
+                            {
+                                InventarId = inventar.Id,
+                                TypOperacie = 2, // Edit
+                                MnozstvoPred = existingInventar.Mnozstvo,
+                                MnozstvoPo = inventar.Mnozstvo,
+                                ZmenaMnozstva = inventar.Mnozstvo - existingInventar.Mnozstvo,
+                                Poznamka = "Upravené v Edit",
+                                DatumZmeny = DateTime.UtcNow,
+                                Pouzivatel = User?.Identity?.Name ?? string.Empty
+                            };
+                            _context.InventarHistoria.Add(hist);
                         }
 
                         _context.Update(inventar);
@@ -449,6 +499,22 @@ namespace MakerslabInventory.Controllers
                 .ToListAsync();
 
             ViewData["NazovInventara"] = inventar.Nazov;
+            return View(historia);
+        }
+
+        // GET: Inventars/HistoriaMnozstva/5
+        public async Task<IActionResult> HistoriaMnozstva(int id)
+        {
+            var inventar = await _context.Inventar.FindAsync(id);
+            if (inventar == null) return NotFound();
+
+            var historia = await _context.InventarHistoria
+                .Where(h => h.InventarId == id)
+                .OrderByDescending(h => h.DatumZmeny)
+                .ToListAsync();
+
+            ViewData["NazovInventara"] = inventar.Nazov;
+            ViewData["InventarId"] = inventar.Id;
             return View(historia);
         }
         // --- KONIEC NOVÉHO KÓDU ---

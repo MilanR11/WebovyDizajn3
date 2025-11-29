@@ -65,6 +65,7 @@
                     @Html.DisplayNameFor(model => model.Kategoria)
                 </a>
             </th>
+            <th>@Html.DisplayNameFor(model => model.SerioveCislo)</th>
             <th>@Html.DisplayNameFor(model => model.Mnozstvo)</th>
             <th>@Html.DisplayNameFor(model => model.Lokalita)</th>
             <th>@Html.DisplayNameFor(model => model.Stav)</th>
@@ -79,6 +80,7 @@
             <tr class="@rowClass" data-item-id="@item.Id">
                 <td>@Html.DisplayFor(modelItem => item.Nazov)</td>
                 <td>@Html.DisplayFor(modelItem => item.Kategoria)</td>
+                <td>@(string.IsNullOrWhiteSpace(item.SerioveCislo) ? "—" : item.SerioveCislo)</td>
                 <td>
                     @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
                     {
@@ -90,6 +92,11 @@
                                    min="0"
                                    value="@item.Mnozstvo" />
                             <span class="text-muted">@item.Jednotka</span>
+                            <input type="text"
+                                   id="qty-note-@item.Id"
+                                   class="form-control form-control-sm"
+                                   style="width: 180px;"
+                                   placeholder="Poznámka (voliteľné)" />
                             <button type="button" class="btn btn-sm btn-outline-primary" title="Uložiť množstvo" onclick="saveQty(@item.Id)">Uložiť</button>
                         </div>
                         <small class="text-muted">Min: @item.MinMnozstvo, Max: @item.MaxMnozstvo</small>
@@ -129,7 +136,8 @@
                             ℹ️
                         </button>
 
-                        <a asp-action="Historia" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="História">🕘</a>
+                        <a asp-action="Historia" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="História výpožičiek">🕘</a>
+                        <a asp-action="HistoriaMnozstva" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="História množstva">📈</a>
 
                         @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
                         {
@@ -225,7 +233,7 @@
                 url: '/Inventars/UpdateQuantity',
                 type: 'POST',
                 headers: { 'RequestVerificationToken': token },
-                data: { id: id, quantity: qty },
+                data: { id: id, quantity: qty, note: (document.getElementById('qty-note-' + id) ? document.getElementById('qty-note-' + id).value : '') },
                 success: function (resp) {
                     try {
                         // Aktualizuj triedu riadku podľa lowStock

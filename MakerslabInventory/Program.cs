@@ -13,7 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Pridanie DbContext pre invent�r a Identity
 var connectionString = builder.Configuration.GetConnectionString("MakerslabInventoryContext");
 builder.Services.AddDbContext<MakerslabInventoryContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), mySqlOptions =>
+    {
+        // Povoliť odolnosť voči výpadkom (automatické retry), užitočné pri štarte kontajnera
+        mySqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+    }));
 
 // Opraven� konfigur�cia Identity: Pou�itie AddIdentity na spr�vne povolenie rol�
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -38,7 +42,15 @@ using (var scope = app.Services.CreateScope())
 {
     // Auto-apply EF Core migrations to keep DB schema up to date
     var db = scope.ServiceProvider.GetRequiredService<MakerslabInventoryContext>();
-    db.Database.Migrate();
+    try
+    {
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // V kontajneri sa môže stať, že DB ešte nie je pripravená; zalogujeme a necháme appku bežať
+        Console.Error.WriteLine($"[Startup] Database migration failed: {ex.Message}");
+    }
 
     // Získanie služieb pre správu rolí a používateľov
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -82,7 +94,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// In kontajneri často chýba HTTPS certifikát a presmerovanie potom zlyhá.
+// Urobme presmerovanie na HTTPS voliteľné pomocou konfigurácie `EnableHttpsRedirect` (default: false)
+var enableHttpsRedirect = builder.Configuration.GetValue<bool?>("EnableHttpsRedirect") ?? false;
+if (enableHttpsRedirect)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();
