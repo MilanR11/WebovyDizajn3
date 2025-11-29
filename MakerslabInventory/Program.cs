@@ -1,27 +1,23 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using MakerslabInventory.Data;
 using Microsoft.AspNetCore.Identity;
+using MakerslabInventory.Data;
 using OfficeOpenXml;
+using System.Diagnostics; // Potrebné pre Process.Start
+using Microsoft.Extensions.Hosting; // Potrebné pre IHostApplicationLifetime
 
-
+// Nastavenie pre System.Drawing (ak je relevantné pre váš systém)
 System.AppContext.SetSwitch("System.Drawing.EnableUnixSupport", true);
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Pridanie DbContext pre invent�r a Identity
+// Pridanie DbContext pre inventár a Identity
 var connectionString = builder.Configuration.GetConnectionString("MakerslabInventoryContext");
 builder.Services.AddDbContext<MakerslabInventoryContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), mySqlOptions =>
-    {
-        // Povoliť odolnosť voči výpadkom (automatické retry), užitočné pri štarte kontajnera
-        mySqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
-    }));
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// Opraven� konfigur�cia Identity: Pou�itie AddIdentity na spr�vne povolenie rol�
+// Opravená konfigurácia Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
-
     .AddEntityFrameworkStores<MakerslabInventoryContext>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
@@ -30,27 +26,53 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.Sign
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-// ----------------------------------------------------
-// KONEČNÉ NASTAVENIE PRE EPPLUS - Nachádza sa na správnom mieste
+// KONEČNÉ NASTAVENIE PRE EPPLUS
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-// ----------------------------------------------------
 
 var app = builder.Build();
+
+// =========================================================================
+// PRIDANÁ LOGIKA PRE AUTOMATICKÉ OTVORENIE PREHLIADAČA
+// =========================================================================
+
+// Získanie služby pre riadenie životného cyklu aplikácie
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+// Registrácia akcie, ktorá sa spustí po úspešnom naštartovaní hosta
+lifetime.ApplicationStarted.Register(() =>
+{
+    // Zistenie URL, na ktorej aplikácia počúva (napr. http://localhost:5000)
+    // Získame prvú URL zo zoznamu (ak ich je viac)
+    var urls = app.Configuration["ASPNETCORE_URLS"] ?? "http://localhost:5000";
+    var url = urls.Split(';').First();
+
+    try
+    {
+        // Spustenie predvoleného prehliadača s adresou aplikácie
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+    catch (Exception ex)
+    {
+        // Logovanie chyby, ak sa nepodarilo otvoriť prehliadač
+        app.Logger.LogWarning(
+            "Nepodarilo sa automaticky otvoriť prehliadač s URL {Url}: {Error}",
+            url,
+            ex.Message
+        );
+    }
+});
+
+// =========================================================================
+// KONIEC LOGIKY PRE AUTOMATICKÉ OTVORENIE PREHLIADAČA
+// =========================================================================
+
 
 // Automatická migrácia databázy a inicializácia rolí
 using (var scope = app.Services.CreateScope())
 {
     // Auto-apply EF Core migrations to keep DB schema up to date
     var db = scope.ServiceProvider.GetRequiredService<MakerslabInventoryContext>();
-    try
-    {
-        db.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        // V kontajneri sa môže stať, že DB ešte nie je pripravená; zalogujeme a necháme appku bežať
-        Console.Error.WriteLine($"[Startup] Database migration failed: {ex.Message}");
-    }
+    db.Database.Migrate();
 
     // Získanie služieb pre správu rolí a používateľov
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -94,13 +116,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// In kontajneri často chýba HTTPS certifikát a presmerovanie potom zlyhá.
-// Urobme presmerovanie na HTTPS voliteľné pomocou konfigurácie `EnableHttpsRedirect` (default: false)
-var enableHttpsRedirect = builder.Configuration.GetValue<bool?>("EnableHttpsRedirect") ?? false;
-if (enableHttpsRedirect)
-{
-    app.UseHttpsRedirection();
-}
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
