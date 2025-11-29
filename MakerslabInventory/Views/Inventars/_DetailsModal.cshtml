@@ -1,0 +1,56 @@
+﻿@model MakerslabInventory.Models.Inventar
+
+<!-- Hlavička modálneho okna -->
+<div class="modal-header">
+    <h5 class="modal-title">Detail položky: @Model.Nazov</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+    <!-- Zobrazenie obrázka uloženého v databáze, ak existuje -->
+    @if (Model?.ObrazokData != null)
+    {
+        <div class="text-center mb-3">
+            <img src="@Url.Action("Image", "Inventars", new { id = Model.Id })" alt="Obrázok @Model.Nazov" class="img-fluid rounded shadow-sm" style="max-height: 300px;" onerror="this.style.display='none'" />
+        </div>
+    }
+    <!-- ------------------------------------------- -->
+
+    <dl class="row">
+        <dt class="col-sm-4">Sériové číslo</dt>
+        <dd class="col-sm-8">@Model.SerioveCislo</dd>
+
+        <dt class="col-sm-4">Kategória</dt>
+        <dd class="col-sm-8">@Model.Kategoria</dd>
+
+        <dt class="col-sm-4">Stav</dt>
+        <dd class="col-sm-8">@Model.Stav</dd>
+
+        <dt class="col-sm-4">Množstvo</dt>
+        <dd class="col-sm-8">@Model.Mnozstvo @Model.Jednotka</dd>
+
+        <dt class="col-sm-4">Lokalita</dt>
+        <dd class="col-sm-8">@Model.Lokalita</dd>
+
+        <dt class="col-sm-4">Zapožičané komu</dt>
+        <dd class="col-sm-8">
+            @if (!string.IsNullOrEmpty(Model.ZapozicaneKomu))
+            {
+                <span class="text-danger">@Model.ZapozicaneKomu</span>
+            }
+            else
+            {
+                <span class="text-success">Dostupné</span>
+            }
+        </dd>
+    </dl>
+</div>
+
+<!-- Pätička modálneho okna -->
+<div class="modal-footer">
+    @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Upraviť</a>
+    }
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+</div>

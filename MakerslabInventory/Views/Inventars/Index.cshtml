@@ -1,159 +1,124 @@
-﻿
-@model IEnumerable<MakerslabInventory.Models.Inventar>
+﻿@model IEnumerable<MakerslabInventory.Models.Inventar>
+@using MakerslabInventory.Models
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Inventár";
 }
 
 <h1>Inventár</h1>
 
-<p>
-    <a asp-action="Create" class="btn btn-success">Vytvoriť novú položku</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+        {
+            <a asp-action="Create" class="btn btn-primary">Pridať novú položku</a>
+            <a asp-action="ExportToExcel" class="btn btn-success ms-2">Export do Excelu</a>
+        }
+    </div>
+</div>
 
-    <a asp-action="ExportToExcel" class="btn btn-info" style="margin-left: 15px;">
-        <i class="fa fa-file-excel"></i> Export do Excelu (.xlsx)
-    </a>
-</p>
-
-<form asp-action="Index" method="get">
-    <div class="form-actions no-color mb-3">
-        <p>
-            Vyhľadať v inventári: <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" />
-            <input type="submit" value="Hľadať" class="btn btn-primary" />
-            <a asp-action="Index" class="btn btn-secondary">Zobraziť všetko</a>
-        </p>
-        <div class="row g-2 align-items-center">
-            <div class="col-auto">
-                <label for="inventoryState" class="col-form-label">Filtrovať stav:</label>
-            </div>
-            <div class="col-auto">
-                @{
-                    var currentState = ViewData["CurrentStateFilter"]?.ToString();
+<!-- Vyhľadávací a filtračný formulár -->
+<form asp-action="Index" method="get" class="mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-auto">
+            <label class="form-label">Hľadať:</label>
+            <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" class="form-control" placeholder="Názov, kategória..." />
+        </div>
+        <div class="col-auto">
+            <label class="form-label">Stav:</label>
+            <select name="inventoryState" asp-items="Html.GetEnumSelectList<StavInventara>()" class="form-select">
+                <option value="">-- Všetky stavy --</option>
+                @if (ViewData["CurrentStateFilter"]?.ToString() == "NizkaZasoba")
+                {
+                    <option value="NizkaZasoba" selected>Nízka zásoba</option>
                 }
-                <select id="inventoryState" name="inventoryState" class="form-select">
-                    @if (string.IsNullOrEmpty(currentState)) {<option value="" selected>Všetko</option>} else {<option value="">Všetko</option>}
-                    @if (currentState == "Dostupný") {<option value="Dostupný" selected>Dostupný</option>} else {<option value="Dostupný">Dostupný</option>}
-                    @if (currentState == "Vypožičaný") {<option value="Vypožičaný" selected>Vypožičaný</option>} else {<option value="Vypožičaný">Vypožičaný</option>}
-                    @if (currentState == "Pokazený") {<option value="Pokazený" selected>Pokazený</option>} else {<option value="Pokazený">Pokazený</option>}
-                    @if (currentState == "NizkaZasoba") {<option value="NizkaZasoba" selected>Nízka zásoba</option>} else {<option value="NizkaZasoba">Nízka zásoba</option>}
-                </select>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-outline-primary">Filtrovať</button>
-            </div>
+                else
+                {
+                    <option value="NizkaZasoba">Nízka zásoba</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary">Filtrovať</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Zrušiť filter</a>
         </div>
     </div>
 </form>
 
-<table class="table">
+<table class="table table-striped table-hover">
     <thead>
         <tr>
             <th>
-                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]" asp-route-inventoryState="@ViewData["CurrentStateFilter"]">
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]">
                     @Html.DisplayNameFor(model => model.Nazov)
                 </a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.SerioveCislo)
-            </th>
-            <th>
-                <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]" asp-route-inventoryState="@ViewData["CurrentStateFilter"]">
+                <a asp-action="Index" asp-route-sortOrder="@ViewData["CategorySortParm"]" asp-route-searchString="@ViewData["CurrentFilter"]">
                     @Html.DisplayNameFor(model => model.Kategoria)
                 </a>
             </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Lokalita)
-            </th>
-            <th class="text-center">
-                @Html.DisplayNameFor(model => model.Stav)
-            </th>
-            <th class="text-center">
-                Zásoba
-            </th>
-            <th class="text-center">Akcie</th>
+            <th>@Html.DisplayNameFor(model => model.Mnozstvo)</th>
+            <th>@Html.DisplayNameFor(model => model.Lokalita)</th>
+            <th>@Html.DisplayNameFor(model => model.Stav)</th>
+            <th>Akcie</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var item in Model)
         {
-            // Logika vizuálneho stavu (teraz funguje s Enum):
-            var rowClass = "";
-
-            // 1. Priorita: Zapožičané (žlté)
-            if (item.Stav == StavInventara.Vypožičaný && !string.IsNullOrEmpty(item.ZapozicaneKomu))
-            {
-                rowClass = "table-warning"; // Žlté upozornenie
-            }
-            // 2. Sekundárna priorita: Nízky stav (červené)
-            else if (item.Mnozstvo <= item.MinMnozstvo)
-            {
-                rowClass = "table-danger"; // Červené upozornenie
-            }
-
-            <tr id="row-@item.Id" class="@rowClass">
+            // Zvýraznenie nízkej zásoby
+            var rowClass = (item.Mnozstvo <= item.MinMnozstvo) ? "table-warning" : "";
+            <tr class="@rowClass">
+                <td>@Html.DisplayFor(modelItem => item.Nazov)</td>
+                <td>@Html.DisplayFor(modelItem => item.Kategoria)</td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Nazov)
+                    @Html.DisplayFor(modelItem => item.Mnozstvo) @Html.DisplayFor(modelItem => item.Jednotka)
                 </td>
+                <td>@Html.DisplayFor(modelItem => item.Lokalita)</td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.SerioveCislo)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Kategoria)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Lokalita)
-                </td>
-                <td class="text-center">
-                    @Html.DisplayFor(modelItem => item.Stav)
-
-                    @* Zobrazenie mena iba ak je Stav: Vypožičaný a pole je vyplnené *@
-                    @if (item.Stav == StavInventara.Vypožičaný && !string.IsNullOrEmpty(item.ZapozicaneKomu))
+                    @if (item.Stav == StavInventara.Vypožičaný)
                     {
-                        <br />
-                        <small>Komu: @Html.DisplayFor(modelItem => item.ZapozicaneKomu)</small>
+                        <span class="badge bg-warning text-dark">Vypožičané (@item.ZapozicaneKomu)</span>
                     }
-                </td>
-                <td class="text-center">
-                    @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+                    else if (item.Mnozstvo <= item.MinMnozstvo)
                     {
-                        <div class="d-flex justify-content-center align-items-center gap-2">
-                            <input type="number" class="form-control form-control-sm qty-input" style="width:100px" min="0" value="@item.Mnozstvo" data-id="@item.Id" />
-                            <span>@item.Jednotka</span>
-                        </div>
+                        <span class="badge bg-danger">Nízka zásoba</span>
                     }
                     else
                     {
-                        <strong>@Html.DisplayFor(modelItem => item.Mnozstvo)</strong> @Html.DisplayFor(modelItem => item.Jednotka)
+                        <span class="badge bg-success">Dostupné</span>
                     }
-                    <br />
-                    <small>(Min: @Html.DisplayFor(modelItem => item.MinMnozstvo), Max: @Html.DisplayFor(modelItem => item.MaxMnozstvo))</small>
                 </td>
                 <td>
-                    <div class="btn-group btn-group-sm" role="group">
-                        @* Tlačidlá dostupné pre Admina a Učiteľa *@
+                    <div class="btn-group" role="group">
                         @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
                         {
-                            @if (item.Stav == StavInventara.Dostupný)
-                            {
-                                <a asp-action="Pozicat" asp-route-id="@item.Id" class="btn btn-warning text-dark">Požičať</a>
-                            }
-                            else if (item.Stav == StavInventara.Vypožičaný)
-                            {
-                                <form asp-action="Vratit" asp-route-id="@item.Id" method="post" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-success" onclick="return confirm('Naozaj vrátiť položku @item.Nazov?');">Vrátiť</button>
-                                </form>
-                            }
-
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary">Upraviť</a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Upraviť">✏️</a>
                         }
 
-                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Detail</a>
-                        <a asp-action="Historia" asp-route-id="@item.Id" class="btn btn-secondary">História</a>
+                        <!-- TOTO JE ZMENA: Tlačidlo Detail už nie je odkaz, ale otvára Modal -->
+                        <button type="button" 
+                                class="btn btn-sm btn-info text-white" 
+                                onclick="openDetailsModal(@item.Id)" 
+                                title="Detail">
+                            ℹ️
+                        </button>
 
-                        @if (User.IsInRole("Admin"))
+                        @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
                         {
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Zmazať</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" title="Zmazať">🗑️</a>
+                            
+                            @if (item.Stav != StavInventara.Vypožičaný)
+                            {
+                                <a asp-action="Pozicat" asp-route-id="@item.Id" class="btn btn-sm btn-primary ms-1">Požičať</a>
+                            }
+                            else
+                            {
+                                <form asp-action="Vratit" asp-route-id="@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Potvrdiť vrátenie?');">
+                                    <button type="submit" class="btn btn-sm btn-success ms-1">Vrátiť</button>
+                                </form>
+                            }
                         }
                     </div>
                 </td>
@@ -162,87 +127,59 @@
     </tbody>
 </table>
 
-@* Skrytý formulár iba na získanie AntiForgery tokenu pre AJAX *@
-@if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
-{
-    <form id="antiForgeryForm" method="post">
-        @Html.AntiForgeryToken()
-    </form>
-}
+<!-- ========================================== -->
+<!-- MODÁLNE OKNO (Vyskakovacie okno)           -->
+<!-- ========================================== -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <!-- modal-lg robí okno širším -->
+        <div class="modal-content" id="modalContentContainer">
+            <!-- Sem sa načíta obsah cez AJAX -->
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Načítavam...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        (function () {
-            function getRequestVerificationToken() {
-                var tokenInput = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
-                return tokenInput ? tokenInput.value : '';
-            }
+        // Funkcia, ktorá sa zavolá po kliknutí na tlačidlo Detail
+        function openDetailsModal(id) {
+            // 1. Nájdeme modal v HTML
+            var myModalElement = document.getElementById('detailsModal');
+            
+            // --- OPRAVA: Presunieme modal na koniec body, aby nebol prekrytý sivým pozadím ---
+            document.body.appendChild(myModalElement);
+            // -------------------------------------------------------------------------------
 
-            function setRowLowState(id, isLow) {
-                var row = document.getElementById('row-' + id);
-                if (!row) return;
-                row.classList.remove('table-danger');
-                if (isLow) {
-                    row.classList.add('table-danger');
+            var myModal = new bootstrap.Modal(myModalElement);
+
+            // 2. Ukážeme modal (zatiaľ s točiacim sa kolieskom)
+            myModal.show();
+            
+            // Reset obsahu na spinner
+            $('#modalContentContainer').html(
+                '<div class="modal-body text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Načítavam...</span></div></div>'
+            );
+
+            // 3. Stiahneme dáta zo servera
+            $.ajax({
+                url: '/Inventars/Details/' + id,
+                type: 'GET',
+                success: function (result) {
+                    // Vložíme stiahnutý HTML kód do modalu
+                    $('#modalContentContainer').html(result);
+                },
+                error: function () {
+                    $('#modalContentContainer').html(
+                        '<div class="modal-header"><h5 class="modal-title text-danger">Chyba</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+                        '<div class="modal-body text-danger">Nepodarilo sa načítať detaily položky.</div>'
+                    );
                 }
-            }
-
-            function sendUpdate(id, qty, inputEl) {
-                inputEl.disabled = true;
-                fetch('@Url.Action("UpdateQuantity", "Inventars")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                    },
-                    body: new URLSearchParams({
-                        id: id,
-                        quantity: qty,
-                        __RequestVerificationToken: getRequestVerificationToken()
-                    })
-                })
-                .then(async r => {
-                    const data = await r.json().catch(() => ({}));
-                    if (!r.ok || !data.success) {
-                        throw new Error(data.message || 'Nepodarilo sa uložiť množstvo');
-                    }
-                    setRowLowState(id, !!data.lowStock);
-                })
-                .catch(err => {
-                    alert(err.message);
-                    // vrátiť starú hodnotu ak máme dataset pôvodnej hodnoty
-                })
-                .finally(() => {
-                    inputEl.disabled = false;
-                });
-            }
-
-            document.querySelectorAll('.qty-input').forEach(function (el) {
-                // uložiť pôvodnú hodnotu
-                el.dataset.orig = el.value;
-
-                el.addEventListener('keydown', function (ev) {
-                    if (ev.key === 'Enter') {
-                        ev.preventDefault();
-                        var id = el.getAttribute('data-id');
-                        var val = parseInt(el.value, 10);
-                        if (isNaN(val) || val < 0) { alert('Zadajte nezáporné číslo.'); el.value = el.dataset.orig; return; }
-                        if (el.dataset.orig !== String(val)) {
-                            sendUpdate(id, val, el);
-                            el.dataset.orig = String(val);
-                        }
-                    }
-                });
-
-                el.addEventListener('blur', function () {
-                    var id = el.getAttribute('data-id');
-                    var val = parseInt(el.value, 10);
-                    if (isNaN(val) || val < 0) { alert('Zadajte nezáporné číslo.'); el.value = el.dataset.orig; return; }
-                    if (el.dataset.orig !== String(val)) {
-                        sendUpdate(id, val, el);
-                        el.dataset.orig = String(val);
-                    }
-                });
             });
-        })();
+        }
     </script>
 }
+

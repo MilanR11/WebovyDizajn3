@@ -10,7 +10,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Edit">
+        <form asp-action="Edit" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
             <div class="form-group">
@@ -59,17 +59,29 @@
                 <span asp-validation-for="Stav" class="text-danger"></span>
             </div>  
             <div class="form-group">
-                <label asp-for="ZapozicaneKomu" class="control-label"></label>
-                <input asp-for="ZapozicaneKomu" class="form-control" />
-                <span asp-validation-for="ZapozicaneKomu" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="DatumVypozicky" class="control-label"></label>
                 <input asp-for="DatumVypozicky" class="form-control" />
                 <span asp-validation-for="DatumVypozicky" class="text-danger"></span>
             </div>
+            
+            <!-- POLE PRE NÁHRANIE OBRÁZKA (uložené v DB) -->
             <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
+                <label class="control-label">Obrázok</label>
+                <input type="file" name="obrazokSubor" class="form-control" accept="image/*" />
+                <small class="form-text text-muted">Vyberte obrázok zo zariadenia. Ak nič nevyberiete, zostane pôvodný.</small>
+            </div>
+            @if (Model?.ObrazokData != null)
+            {
+                <div class="mt-2">
+                    <label class="form-label">Aktuálny obrázok:</label>
+                    <div>
+                        <img src="@Url.Action("Image", "Inventars", new { id = Model.Id })" alt="Obrázok @Model.Nazov" class="img-thumbnail" style="max-height:200px;" />
+                    </div>
+                </div>
+            }
+            
+            <div class="form-group mt-3">
+                <input type="submit" value="Uložiť" class="btn btn-primary" />
             </div>
         </form>
     </div>

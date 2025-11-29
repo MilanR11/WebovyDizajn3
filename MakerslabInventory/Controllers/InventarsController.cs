@@ -9,6 +9,7 @@ using MakerslabInventory.Data;
 using MakerslabInventory.Models;
 using Microsoft.AspNetCore.Authorization;
 using OfficeOpenXml; 
+using Microsoft.AspNetCore.Http;
 
 namespace MakerslabInventory.Controllers
 
@@ -186,96 +187,121 @@ namespace MakerslabInventory.Controllers
                 return NotFound();
             }
 
+            // ZMENA: Ak je to AJAX požiadavka (od modálneho okna), vrátime PartialView
+            if (Request.Headers.XRequestedWith == "XMLHttpRequest")
+            {
+                return PartialView("_DetailsModal", inventar);
+            }
+
             return View(inventar);
         }
-        
-        // GET: Inventars/Create
-            public IActionResult Create()
+
+        // OBRÁZOK: Vráti obrázok uložený v databáze
+        [HttpGet]
+        public async Task<IActionResult> Image(int id)
+        {
+            var item = await _context.Inventar.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null || item.ObrazokData == null || string.IsNullOrEmpty(item.ObrazokMimeType))
             {
-                // Načítanie zoznamov pre dropdowny
+                return NotFound();
+            }
+
+            return File(item.ObrazokData, item.ObrazokMimeType);
+        }
+
+        // GET: Inventars/Create
+           public IActionResult Create()
+            {
                 ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov");
                 ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov");
                 return View();
             }
 
             // POST: Inventars/Create
-            // To protect from overposting attacks, enable the specific properties you want to bind to.
-            // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
             [HttpPost]
             [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Create([Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
+            // ZMENA: Pridané IFormFile a odstránené ObrazokUrl
+            public async Task<IActionResult> Create([Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar, IFormFile? obrazokSubor)
             {
                 if (ModelState.IsValid)
                 {
+                    // SPRACOVANIE OBRÁZKA
+                    if (obrazokSubor != null && obrazokSubor.Length > 0)
+                    {
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await obrazokSubor.CopyToAsync(memoryStream);
+                            inventar.ObrazokData = memoryStream.ToArray();
+                            inventar.ObrazokMimeType = obrazokSubor.ContentType;
+                        }
+                    }
+
                     _context.Add(inventar);
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
-                
-                // Pri chybe vrátiť dropdowny
                 ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
                 ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov", inventar.Jednotka);
-                
                 return View(inventar);
             }
 
             // GET: Inventars/Edit/5
             public async Task<IActionResult> Edit(int? id)
             {
-                if (id == null)
-                {
-                    return NotFound();
-                }
+                if (id == null) return NotFound();
 
                 var inventar = await _context.Inventar.FindAsync(id);
-                if (inventar == null)
-                {
-                    return NotFound();
-                }
-                
-                // Načítanie zoznamov pre editáciu
+                if (inventar == null) return NotFound();
+
                 ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
                 ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov", inventar.Jednotka);
-                
                 return View(inventar);
             }
 
             // POST: Inventars/Edit/5
-// ... existing code ...
             [HttpPost]
             [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Edit(int id, [Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar)
+            // ZMENA: Pridané IFormFile a odstránené ObrazokUrl
+            public async Task<IActionResult> Edit(int id, [Bind("Id,Nazov,Kategoria,Mnozstvo,SerioveCislo,Jednotka,Lokalita,MinMnozstvo,MaxMnozstvo,Stav,ZapozicaneKomu,DatumVypozicky")] Inventar inventar, IFormFile? obrazokSubor)
             {
-                if (id != inventar.Id)
-                {
-                    return NotFound();
-                }
+                if (id != inventar.Id) return NotFound();
 
                 if (ModelState.IsValid)
                 {
                     try
                     {
+                        // Načítame starý obrázok z DB, aby sme ho neprepísali, ak užívateľ nenahral nový
+                        var existingInventar = await _context.Inventar.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+
+                        if (obrazokSubor != null && obrazokSubor.Length > 0)
+                        {
+                            // Nový obrázok
+                            using (var memoryStream = new MemoryStream())
+                            {
+                                await obrazokSubor.CopyToAsync(memoryStream);
+                                inventar.ObrazokData = memoryStream.ToArray();
+                                inventar.ObrazokMimeType = obrazokSubor.ContentType;
+                            }
+                        }
+                        else if (existingInventar != null)
+                        {
+                            // Zachovanie starého
+                            inventar.ObrazokData = existingInventar.ObrazokData;
+                            inventar.ObrazokMimeType = existingInventar.ObrazokMimeType;
+                        }
+
                         _context.Update(inventar);
                         await _context.SaveChangesAsync();
                     }
                     catch (DbUpdateConcurrencyException)
                     {
-                        if (!InventarExists(inventar.Id))
-                        {
-                            return NotFound();
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        if (!InventarExists(inventar.Id)) return NotFound();
+                        else throw;
                     }
                     return RedirectToAction(nameof(Index));
                 }
-                
-                // Pri chybe vrátiť dropdowny
                 ViewData["Kategoria"] = new SelectList(_context.Kategoria, "Nazov", "Nazov", inventar.Kategoria);
                 ViewData["Jednotka"] = new SelectList(_context.Jednotka, "Nazov", "Nazov", inventar.Jednotka);
-                
                 return View(inventar);
             }
 

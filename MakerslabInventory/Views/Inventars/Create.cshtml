@@ -4,93 +4,28 @@
     ViewData["Title"] = "Create";
 }
 
-<h1>Create</h1>
-
-<h4>Inventar</h4>
+<h1>Vytvoriť</h1>
+<h4>Inventár</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create">
+        <!-- ZMENA: Pridané enctype="multipart/form-data" -->
+        <form asp-action="Create" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Nazov" class="control-label"></label>
-                <input asp-for="Nazov" class="form-control" />
-                <span asp-validation-for="Nazov" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="SerioveCislo" class="control-label"></label>
-                <input asp-for="SerioveCislo" class="form-control" />
-                <span asp-validation-for="SerioveCislo" class="text-danger"></span>
-            </div>
 
-            <!-- TUTO JE ZMENA PRE KATEGÓRIU -->
-            <div class="form-group">
-                <label asp-for="Kategoria" class="control-label"></label>
-                <!-- Pôvodný input sme nahradili selectom -->
-                <select asp-for="Kategoria" class="form-control" asp-items="ViewBag.Kategoria">
-                    <option value="">-- Vyberte kategóriu --</option>
-                </select>
-                <span asp-validation-for="Kategoria" class="text-danger"></span>
-            </div>
+            <!-- ... existujúce polia (Nazov, Kategoria atď.) ... -->
 
+            <!-- ZMENA: Pole pre nahranie súboru -->
             <div class="form-group">
-                <label asp-for="Mnozstvo" class="control-label"></label>
-                <input asp-for="Mnozstvo" class="form-control" />
-                <span asp-validation-for="Mnozstvo" class="text-danger"></span>
+                <label class="control-label">Obrázok</label>
+                <input type="file" name="obrazokSubor" class="form-control" accept="image/*" />
             </div>
+            <!-- -------------------------------- -->
 
-            <!-- TUTO JE ZMENA PRE JEDNOTKU -->
-            <div class="form-group">
-                <label asp-for="Jednotka" class="control-label"></label>
-                <!-- Pôvodný input sme nahradili selectom -->
-                <select asp-for="Jednotka" class="form-control" asp-items="ViewBag.Jednotka">
-                    <option value="">-- Vyberte jednotku --</option>
-                </select>
-                <span asp-validation-for="Jednotka" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Lokalita" class="control-label"></label>
-                <input asp-for="Lokalita" class="form-control" />
-                <span asp-validation-for="Lokalita" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="MinMnozstvo" class="control-label"></label>
-                <input asp-for="MinMnozstvo" class="form-control" />
-                <span asp-validation-for="MinMnozstvo" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="MaxMnozstvo" class="control-label"></label>
-                <input asp-for="MaxMnozstvo" class="form-control" />
-                <span asp-validation-for="MaxMnozstvo" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Stav" class="control-label"></label>
-                <!-- Pridal som asp-items, ktorý načíta hodnoty z Enumu -->
-                <select asp-for="Stav" class="form-control" asp-items="Html.GetEnumSelectList<MakerslabInventory.Models.StavInventara>()"></select>
-                <span asp-validation-for="Stav" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ZapozicaneKomu" class="control-label"></label>
-                <input asp-for="ZapozicaneKomu" class="form-control" />
-                <span asp-validation-for="ZapozicaneKomu" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DatumVypozicky" class="control-label"></label>
-                <input asp-for="DatumVypozicky" class="form-control" />
-                <span asp-validation-for="DatumVypozicky" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+            <div class="form-group mt-3">
+                <input type="submit" value="Vytvoriť" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+<!-- ... -->

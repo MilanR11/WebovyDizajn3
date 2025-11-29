@@ -46,6 +46,13 @@ namespace MakerslabInventory.Models
 
         [Display(Name = "Dátum výpožičky")]
         [DataType(DataType.Date)]
-        public DateTime? DatumVypozicky { get; set; } // Kedy bolo zapožičané
+        public DateTime? DatumVypozicky { get; set; }
+
+        // --- ZMENA: Namiesto URL ukladáme dáta ---
+        [Display(Name = "Obrázok")]
+        public byte[]? ObrazokData { get; set; }
+
+        public string? ObrazokMimeType { get; set; } // Napr. "image/jpeg"
+        // -----------------------------------------
     }
 }
