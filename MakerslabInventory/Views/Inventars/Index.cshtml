@@ -17,6 +17,13 @@
     </div>
 </div>
 
+@* Skrytý formulár len kvôli AntiForgery tokenu pre AJAX *@
+<form id="antiForgeryForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="submit" />
+    <!-- submit tu nikdy nepoužijeme, ide len o vloženie tokenu do DOMu -->
+}</form>
+
 <!-- Vyhľadávací a filtračný formulár -->
 <form asp-action="Index" method="get" class="mb-4">
     <div class="row g-3 align-items-end">
@@ -69,25 +76,42 @@
         {
             // Zvýraznenie nízkej zásoby
             var rowClass = (item.Mnozstvo <= item.MinMnozstvo) ? "table-warning" : "";
-            <tr class="@rowClass">
+            <tr class="@rowClass" data-item-id="@item.Id">
                 <td>@Html.DisplayFor(modelItem => item.Nazov)</td>
                 <td>@Html.DisplayFor(modelItem => item.Kategoria)</td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Mnozstvo) @Html.DisplayFor(modelItem => item.Jednotka)
+                    @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
+                    {
+                        <div class="d-flex align-items-center gap-1">
+                            <input type="number"
+                                   id="qty-input-@item.Id"
+                                   class="form-control form-control-sm"
+                                   style="width: 110px;"
+                                   min="0"
+                                   value="@item.Mnozstvo" />
+                            <span class="text-muted">@item.Jednotka</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary" title="Uložiť množstvo" onclick="saveQty(@item.Id)">Uložiť</button>
+                        </div>
+                        <small class="text-muted">Min: @item.MinMnozstvo, Max: @item.MaxMnozstvo</small>
+                    }
+                    else
+                    {
+                        @Html.DisplayFor(modelItem => item.Mnozstvo) @Html.DisplayFor(modelItem => item.Jednotka)
+                    }
                 </td>
                 <td>@Html.DisplayFor(modelItem => item.Lokalita)</td>
                 <td>
                     @if (item.Stav == StavInventara.Vypožičaný)
                     {
-                        <span class="badge bg-warning text-dark">Vypožičané (@item.ZapozicaneKomu)</span>
+                        <span class="badge bg-warning text-dark status-badge">Vypožičané (@item.ZapozicaneKomu)</span>
                     }
                     else if (item.Mnozstvo <= item.MinMnozstvo)
                     {
-                        <span class="badge bg-danger">Nízka zásoba</span>
+                        <span class="badge bg-danger status-badge">Nízka zásoba</span>
                     }
                     else
                     {
-                        <span class="badge bg-success">Dostupné</span>
+                        <span class="badge bg-success status-badge">Dostupné</span>
                     }
                 </td>
                 <td>
@@ -104,6 +128,8 @@
                                 title="Detail">
                             ℹ️
                         </button>
+
+                        <a asp-action="Historia" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="História">🕘</a>
 
                         @if (User.IsInRole("Admin") || User.IsInRole("Ucitel"))
                         {
@@ -177,6 +203,55 @@
                         '<div class="modal-header"><h5 class="modal-title text-danger">Chyba</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
                         '<div class="modal-body text-danger">Nepodarilo sa načítať detaily položky.</div>'
                     );
+                }
+            });
+        }
+
+        // --- Ukladanie množstva cez AJAX ---
+        function saveQty(id) {
+            var input = document.getElementById('qty-input-' + id);
+            if (!input) return;
+            var qty = parseInt(input.value, 10);
+            if (isNaN(qty) || qty < 0) {
+                alert('Množstvo musí byť nezáporné číslo.');
+                return;
+            }
+
+            // Anti-forgery token
+            var tokenInput = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+            var token = tokenInput ? tokenInput.value : '';
+
+            $.ajax({
+                url: '/Inventars/UpdateQuantity',
+                type: 'POST',
+                headers: { 'RequestVerificationToken': token },
+                data: { id: id, quantity: qty },
+                success: function (resp) {
+                    try {
+                        // Aktualizuj triedu riadku podľa lowStock
+                        var row = document.querySelector('tr[data-item-id="' + id + '"]');
+                        if (row) {
+                            if (resp.lowStock) {
+                                row.classList.add('table-warning');
+                            } else {
+                                row.classList.remove('table-warning');
+                            }
+                            // Aktualizuj odznak stavu, len ak nie je vypožičané
+                            var badge = row.querySelector('.status-badge');
+                            if (badge && badge.classList.contains('bg-warning') === false) {
+                                if (resp.lowStock) {
+                                    badge.className = 'badge bg-danger status-badge';
+                                    badge.textContent = 'Nízka zásoba';
+                                } else {
+                                    badge.className = 'badge bg-success status-badge';
+                                    badge.textContent = 'Dostupné';
+                                }
+                            }
+                        }
+                    } catch (e) { /* noop */ }
+                },
+                error: function (xhr) {
+                    alert('Nepodarilo sa uložiť množstvo: ' + (xhr.responseJSON?.message || xhr.statusText));
                 }
             });
         }
